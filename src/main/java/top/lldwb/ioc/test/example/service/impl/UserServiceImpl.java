@@ -13,13 +13,12 @@ import top.lldwb.ioc.test.example.service.UserService;
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
-        @Inject("userDao")
+//        @Inject("userDao")
     private UserDao userDao;
 
     //    @Autowired
 //    @Qualifier("userDaoFImpl")
-//    @Inject("userDao")
-//    @Inject
+    @Inject("userDao")
     public void setUserDao(UserDao userDaoFImpl) {
         this.userDao = userDaoFImpl;
     }

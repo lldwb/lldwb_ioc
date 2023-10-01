@@ -6,8 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import top.lldwb.ioc.Bean;
 import top.lldwb.ioc.Inject;
 
-import java.beans.BeanInfo;
-import java.beans.Introspector;
+import java.beans.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -232,36 +231,41 @@ public class ContainerFactory {
             }
         }
 
-//        BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass(),
-//                Object.class);
-
-
-//        log.debug("遍历公开方法，查看是否需要依赖注入");
-//        for (Method method : object.getClass().getMethods()) {
-//            if (method.isAnnotationPresent(Inject.class)) {
-//                log.debug("method：" + method.getName());
-//                List<Object> objectList = new ArrayList<>();
-//                for (Parameter parameter : method.getParameters()) {
-//                    if (isMultipleClass(parameter.getType())) {
-//                        log.debug("一个实现类时执行");
-//                        log.debug("参数类型：" + parameter.getType());
-//                        objectList.add(getBean(parameter.getType()));
-//                    } else {
-//                        log.debug("多个实现类时执行");
-//                        log.debug("参数名称：" + parameter.getName());
-//                        objectList.add(getBean(parameter.getName()));
-//                    }
-//                }
-//                try {
-//                    method.invoke(object, objectList.stream().toArray());
-//                } catch (IllegalAccessException e) {
-//                    throw new RuntimeException(e);
-//                } catch (InvocationTargetException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        }
-
+        log.debug("遍历公开方法，查看是否需要依赖注入");
+        try {
+            // 获取 object 及其指定到父类 Object 的 BeanInfo
+            BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass(), Object.class);
+            // 方法信息
+//            for (MethodDescriptor methodDescriptor : beanInfo.getMethodDescriptors()) {
+            for (Method method : object.getClass().getMethods()) {
+//                Method method = methodDescriptor.getMethod();
+                if (method.isAnnotationPresent(Inject.class)) {
+                    log.debug("method：" + method.getName());
+                    List<Object> objectList = new ArrayList<>();
+                    log.debug("获取方法的每个参数");
+                    for (Parameter parameter : method.getParameters()) {
+                        log.debug("遍历参数");
+                        if (isMultipleClass(parameter.getClass())) {
+                            log.debug("一个实现类时执行");
+                            log.debug("参数类型：" + parameter.getType().getName());
+                            objectList.add(getBean(parameter.getType()));
+                        } else {
+                            log.debug("多个实现类时执行");
+                            Inject inject = method.getAnnotation(Inject.class);
+                            log.debug("注解指定的实现类：" + inject.value());
+                            objectList.add(getBean(inject.value()));
+                        }
+                    }
+                    method.invoke(object, objectList.stream().toArray());
+                }
+            }
+        } catch (IntrospectionException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         return object;
     }
 }
