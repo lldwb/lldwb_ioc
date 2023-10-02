@@ -2,16 +2,13 @@ package top.lldwb.ioc.inject;
 
 import lombok.extern.slf4j.Slf4j;
 import top.lldwb.ioc.factory.ContainerFactory;
-import top.lldwb.ioc.inject.impl.FieldInjectHandler;
-import top.lldwb.ioc.inject.impl.MethodInjectHandler;
 import top.lldwb.ioc.util.ScanUtils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 注入调用者
+ * 注入处理器调用者
  */
 @Slf4j
 public class InjectHandlerInvoker {

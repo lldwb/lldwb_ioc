@@ -21,10 +21,7 @@ public class MethodInjectHandler implements InjectHandler {
         log.debug("遍历公开方法，查看是否需要依赖注入");
         try {
             // 获取 object 及其指定到父类 Object 的 BeanInfo
-//            BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass(), Object.class);
             // 方法信息
-//            for (MethodDescriptor methodDescriptor : beanInfo.getMethodDescriptors()) {
-//                Method method = methodDescriptor.getMethod();
             for (Method method : object.getClass().getMethods()) {
                 if (method.isAnnotationPresent(Inject.class)) {
                     log.debug("method：" + method.getName());
