@@ -5,6 +5,8 @@ import io.github.classgraph.ScanResult;
 import lombok.extern.slf4j.Slf4j;
 import top.lldwb.ioc.Bean;
 import top.lldwb.ioc.Inject;
+import top.lldwb.ioc.inject.InjectHandlerInvoker;
+import top.lldwb.ioc.util.ScanUtils;
 
 import java.beans.*;
 import java.lang.reflect.Field;
@@ -33,7 +35,7 @@ public class ContainerFactory {
      * 参数表示要管理的包路径
      */
     public ContainerFactory(String... packages) {
-        List<Class<?>> classList = scan(packages);
+        List<Class<?>> classList = ScanUtils.scan(packages);
         resolveClass(classList);
     }
 
@@ -109,18 +111,6 @@ public class ContainerFactory {
     }
 
     /**
-     * 扫描指定的包，并返回相关的Class对象
-     *
-     * @param packages
-     * @return
-     */
-    private List<Class<?>> scan(String... packages) {
-        try (ScanResult scan = new ClassGraph().enableAllInfo().acceptPackages(packages).scan()) {
-            return scan.getAllClasses().loadClasses();
-        }
-    }
-
-    /**
      * 解析class集合，找到带有@Bean注解的类
      * 同时对单例容器进行依赖注入
      *
@@ -155,7 +145,7 @@ public class ContainerFactory {
      * @param tClass
      * @return 有多个返回 false
      */
-    private Boolean isMultipleClass(Class<?> tClass) {
+    public Boolean isMultipleClass(Class<?> tClass) {
         // 判断单例容器中是否有
         Boolean is = false;
         for (Object objects : container.values()) {
@@ -210,62 +200,7 @@ public class ContainerFactory {
      */
     private Object inject(Object object) {
         log.debug(object.getClass().getName() + "进行依赖注入");
-
-        log.debug("遍历所有字段，查看是否需要依赖注入(不推荐)");
-        for (Field field : object.getClass().getDeclaredFields()) {
-            if (field.isAnnotationPresent(Inject.class)) {
-                log.debug("field：" + field.getName());
-                Inject inject = field.getAnnotation(Inject.class);
-                Object value;
-                if (inject.value() != "") {
-                    value = getBean(inject.value());
-                } else {
-                    value = getBean(field.getType());
-                }
-                try {
-                    field.setAccessible(true);
-                    field.set(object, value);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        log.debug("遍历公开方法，查看是否需要依赖注入");
-        try {
-            // 获取 object 及其指定到父类 Object 的 BeanInfo
-            BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass(), Object.class);
-            // 方法信息
-//            for (MethodDescriptor methodDescriptor : beanInfo.getMethodDescriptors()) {
-            for (Method method : object.getClass().getMethods()) {
-//                Method method = methodDescriptor.getMethod();
-                if (method.isAnnotationPresent(Inject.class)) {
-                    log.debug("method：" + method.getName());
-                    List<Object> objectList = new ArrayList<>();
-                    log.debug("获取方法的每个参数");
-                    for (Parameter parameter : method.getParameters()) {
-                        log.debug("遍历参数");
-                        if (isMultipleClass(parameter.getClass())) {
-                            log.debug("一个实现类时执行");
-                            log.debug("参数类型：" + parameter.getType().getName());
-                            objectList.add(getBean(parameter.getType()));
-                        } else {
-                            log.debug("多个实现类时执行");
-                            Inject inject = method.getAnnotation(Inject.class);
-                            log.debug("注解指定的实现类：" + inject.value());
-                            objectList.add(getBean(inject.value()));
-                        }
-                    }
-                    method.invoke(object, objectList.stream().toArray());
-                }
-            }
-        } catch (IntrospectionException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        InjectHandlerInvoker.handle(object,this);
         return object;
     }
 }

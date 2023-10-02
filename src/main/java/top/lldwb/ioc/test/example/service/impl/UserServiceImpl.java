@@ -18,7 +18,8 @@ public class UserServiceImpl implements UserService {
 
     //    @Autowired
 //    @Qualifier("userDaoFImpl")
-    @Inject("userDao")
+//    @Inject("userDao")
+    @Inject("userDaoFImpl")
     public void setUserDao(UserDao userDaoFImpl) {
         this.userDao = userDaoFImpl;
     }
